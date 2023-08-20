@@ -252,8 +252,8 @@ def train_model_2(batches):
 
     # Hyperparameters
     input_size = 4804  # Size of each input vector (e.g., window size)
-    hidden_size = 4000  # Number of hidden units in the RNN
-    hidden_size_2 = 3000  # Number of hidden units in the RNN
+    hidden_size = 300  # Number of hidden units in the RNN
+    hidden_size_2 = 1000  # Number of hidden units in the RNN
     output_size = 2402  # Size of the predicted output vector
 
     # Convert data to PyTorch tensors

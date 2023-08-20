@@ -1,0 +1,11 @@
+{
+  "type": "CNN FFT",
+  "window_size": 1200,
+  "method": "FFT",
+  "dataset": "data/DHM 2/Andrei/transformed_data.csv",
+  "plots": true,
+  "test_size": 0.1,
+  "epochs": 100,
+  "learning_rate": 0.001,
+  "kernal_size": 100
+}
