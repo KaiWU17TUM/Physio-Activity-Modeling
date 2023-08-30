@@ -6,19 +6,20 @@ import torch
 from matplotlib import pyplot as plt
 from torch import nn
 
-"""
-Splits ECG data from a CSV file into batches based on a target length.
 
-Args:
-    ecg_file (str): Path to the CSV file containing ECG data and labels.
-    target_length (int): The desired length for each batch.
-
-Returns:
-    list: A list of batches, where each batch is a list of tuples containing ECG data and its label.
-"""
 
 
 def split_to_batches(ecg_file, target_length):
+    """
+    Splits ECG data from a CSV file into batches based on a target length.
+
+    Args:
+        ecg_file (str): Path to the CSV file containing ECG data and labels.
+        target_length (int): The desired length for each batch.
+
+    Returns:
+        list: A list of batches, where each batch is a list of tuples containing ECG data and its label.
+    """
     data_array_action = []  # List to hold batches of data
     # Split the data into a multi-dimensional array. Each list element is a tuple containing ECG data for an action and its label.
     with open(ecg_file, "r") as f:
@@ -440,9 +441,9 @@ def train_cnn_fft(data_array_action, test_size, window_size, epoch_count, learni
     for i in range(len(data_array_action) - 1):
 
         signal_array_strings_curr = np.array([data for data, _ in data_array_action[i]])
-        signal_array_strings_next = np.array([data for data, _ in data_array_action[i + 1]])
+        signal_array_strings_next = np.array([data for data, _ in data_array_action[i + 1]])# + 1
         label_curr = np.array([label for _, label in data_array_action[i]])
-        label_next = np.array([label for _, label in data_array_action[i + 1]])
+        label_next = np.array([label for _, label in data_array_action[i + 1]])#  + 1
 
         signal_array_strings_curr = signal_array_strings_curr.astype(np.float32)
         signal_array_strings_next = signal_array_strings_next.astype(np.float32)
@@ -494,6 +495,7 @@ def train_cnn_fft(data_array_action, test_size, window_size, epoch_count, learni
     for epoch in range(num_epochs):
         optimizer.zero_grad()  # Zero the gradients
         outputs = cnn_fft_model(input_data)  # Forward pass
+
         loss = criterion(outputs, labels)  # Calculate loss
         loss.backward()  # Backpropagation
         optimizer.step()  # Update weights

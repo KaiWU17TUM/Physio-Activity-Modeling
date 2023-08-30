@@ -32,7 +32,7 @@ def build_csv(lable_file, data_file, name):
                 index_in_labels += 1
 
     # Output file name
-    output_file = "data/DHM 2/Andrei/transformed_data.csv"
+    output_file = "data/DHM 2/Andrei/transformed_data3.csv"
 
     with open(output_file, "w", newline="") as f:
         writer = csv.writer(f)
@@ -43,4 +43,4 @@ def build_csv(lable_file, data_file, name):
 
 if __name__ == "__main__":
     print("Hello")
-    build_csv("data/DHM 2/Andrei/Andrei Activities2.csv", "data/DHM 2/Andrei/Fri Aug  2021DRI_WF_ECG1.csv", "Andrei")
+    build_csv("data/DHM 2/Andrei/Andrei Activities3new.csv", "data/DHM 2/Andrei/Fri Aug  2021DRI_WF_ECG1.csv", "Andrei")
