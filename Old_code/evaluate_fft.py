@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from nn_3 import split_to_batches
 
 if __name__ == "__main__":
-    ecg_file = "data/DHM 2/Andrei/transformed_data.csv"
+    ecg_file = "../data/DHM 2/Andrei/transformed_data.csv"
 
     data_array = []
     # split in a multi dim array. ech list element is a tuple a list of the ecg of a action and the lable

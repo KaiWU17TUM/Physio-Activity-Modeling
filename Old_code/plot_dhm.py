@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 if __name__ == "__main__":
-    data = pd.read_csv('data/DHM-action-vitals/activity_hr_data.csv')
+    data = pd.read_csv('../data/DHM-action-vitals/activity_hr_data.csv')
     # #That works great for DHM dataset
     data['index'] = pd.to_datetime(data['index'])
     data.set_index('index', inplace=True)

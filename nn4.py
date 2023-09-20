@@ -10,8 +10,9 @@ import numpy as np
 
 from ecgdetectors import Detectors
 
+
 ##https://github.com/berndporr/py-ecg-detectors
-#Authors
+# Authors
 #
 # Luis Howell, luisbhowell@gmail.com
 #
@@ -27,7 +28,7 @@ from ecgdetectors import Detectors
 def extract_qrs_complex(file, window_size):
     # Load ECG data from CSV
     data_as_tupel = []
-    detectors = Detectors(1000) # vorher 1000 300hz would be the correct one ?
+    detectors = Detectors(1000)  # vorher 1000 300hz would be the correct one ?
     with open(file, "r") as f:
         reader = csv.reader(f)
         for row in reader:
@@ -37,16 +38,16 @@ def extract_qrs_complex(file, window_size):
 
     r_peaks = detectors.hamilton_detector([float(ecg[0][0]) for ecg in data_as_tupel])
 
-    #print(r_peaks)
-    #plot_peaks([float(ecg[0][0]) for ecg in data_as_tupel], r_peaks)
+    # print(r_peaks)
+    # plot_peaks([float(ecg[0][0]) for ecg in data_as_tupel], r_peaks)
 
-    #build batches:
+    # build batches:
     result_batches = []
     for index in r_peaks:
-        result_batches.append(data_as_tupel[int(index-window_size/2):int(index+window_size/2)])
-
+        result_batches.append(data_as_tupel[int(index - window_size / 2):int(index + window_size / 2)])
 
     return result_batches
+
 
 def plot_peaks(data, r_peaks):
     index_limit = 3000
@@ -63,13 +64,12 @@ def plot_peaks(data, r_peaks):
     plt.title(f"Plot of First {index_limit} Elements")
     plt.show()
 
+
 def plot_batches(batches):
     print(len(batches))
     batch = batches[2000]
 
     fft_batch = np.fft.fft([float(sig[0][0]) for sig in batch])
-
-
 
     ecg_signal = [float(sig[0][0]) for sig in batch]
 
@@ -77,7 +77,7 @@ def plot_batches(batches):
 
     plt.subplot(2, 2, 1)
 
-    #print(ecg_signal)
+    # print(ecg_signal)
     plt.plot(ecg_signal)
     plt.xlabel("Index")
     plt.ylabel("Value")
@@ -149,6 +149,8 @@ def build_test_array(batches, test_size):
     # Shuffle the array randomly
     np.random.shuffle(array_index)
     return array_index
+
+
 def split_img_values(value_array):
     """
     Splits complex numbers into their real and imaginary parts and creates a new array with alternating real and imaginary values.
@@ -189,24 +191,25 @@ def inverse_img_number(values_array):
 
     complex_numbers = np.array(complex_numbers)
     return complex_numbers
-def train_lstm(batches, input_size, hidden_size, num_layers, output_size, test_size, epochs, learning_rate, truncate_value):
 
+
+def train_lstm(batches, input_size, hidden_size, num_layers, output_size, test_size, epochs, learning_rate,
+               truncate_value):
     x_train = []
     y_train = []
     x_test = []
     y_test = []
     untransformed_test = []
 
-
     array_index = build_test_array(batches, test_size)
 
     for index in range(len(batches) - 1):
         ecg_signal = [float(sig[0][0]) for sig in batches[index]]
-        fft_batch = split_img_values(np.fft.rfft(ecg_signal)[:truncate_value]) # take only the first 50 values
+        fft_batch = split_img_values(np.fft.rfft(ecg_signal)[:truncate_value])  # take only the first 50 values
 
         ecg_signal_2 = [float(sig[0][0]) for sig in batches[index + 1]]
         label_2 = [float(sig[0][1]) for sig in batches[index + 1]]
-        fft_batch_2 = split_img_values(np.fft.rfft(ecg_signal_2)[:truncate_value]) # take only the first 50 values
+        fft_batch_2 = split_img_values(np.fft.rfft(ecg_signal_2)[:truncate_value])  # take only the first 50 values
         score_next = np.mean(label_2)
 
         temp = np.concatenate((fft_batch, [score_next]))
@@ -218,8 +221,6 @@ def train_lstm(batches, input_size, hidden_size, num_layers, output_size, test_s
             x_test.append(temp)
             y_test.append(fft_batch_2)
             untransformed_test.append(ecg_signal_2)
-
-
 
     # Convert data to PyTorch tensors
     x_train_tensor = torch.tensor(np.array(x_train), dtype=torch.float32)
@@ -245,23 +246,26 @@ def train_lstm(batches, input_size, hidden_size, num_layers, output_size, test_s
         loss = criterion(outputs, y_train_tensor)
         loss.backward()
         optimizer.step()
-        print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
 
     print("start testing")
     with torch.no_grad():
         predictions = model(x_test_tensor)
 
     for pred, ground_truth, untrandsformed in zip(predictions, y_test, untransformed_test):
-        #print(pred)
-        #print(y_test)
-        zero_array = np.zeros(window_size-truncate_value)  # Create a zero array of the same length
+        # print(pred)
+        # print(y_test)
+        #FIXME dont use a golabe var here
+        zero_array = np.zeros(window_size_setup - truncate_value)  # Create a zero array of the same length
 
         # Concatenate the arrays
         pred = np.concatenate((pred, zero_array))
         ground_truth = np.concatenate((ground_truth, zero_array))
         plot_prediction(pred, ground_truth, untrandsformed)
 
+
 def plot_prediction(pred, ground, untransformed):
+    # TODO do i need the irfft ? =?? RRRRR
     inverted_signal_pred = np.fft.ifft(inverse_img_number(pred))
     inverted_signal_ground = np.fft.ifft(inverse_img_number(ground))
 
@@ -341,19 +345,19 @@ class NeuralNetwork(nn.Module):
         x = self.fc3(x)
         return x
 
-def train_mlp(batches, test_size, window_size, epochs, learning_rate_value, truncate_value):
 
+def train_mlp(batches, test_size, window_size, epochs, learning_rate_value, truncate_value):
     array_index = build_test_array(batches, test_size)
 
     x_train, x_test, y_train, y_test = [], [], [], []
 
     for index in range(len(batches) - 1):
         ecg_signal = [float(sig[0][0]) for sig in batches[index]]
-        fft_batch = split_img_values(np.fft.rfft(ecg_signal)[:truncate_value]) # take only the first 50 values
+        fft_batch = split_img_values(np.fft.rfft(ecg_signal)[:truncate_value])  # take only the first 50 values
 
         ecg_signal_2 = [float(sig[0][0]) for sig in batches[index + 1]]
         label_2 = [float(sig[0][1]) for sig in batches[index + 1]]
-        fft_batch_2 = split_img_values(np.fft.rfft(ecg_signal_2)[:truncate_value]) # take only the first 50 values
+        fft_batch_2 = split_img_values(np.fft.rfft(ecg_signal_2)[:truncate_value])  # take only the first 50 values
         score_next = np.mean(label_2)
 
         temp = np.concatenate((fft_batch, [score_next]))
@@ -364,7 +368,7 @@ def train_mlp(batches, test_size, window_size, epochs, learning_rate_value, trun
         else:
             x_test.append(temp)
             y_test.append(fft_batch_2)
-            #untransformed_test.append(ecg_signal_2)
+            # untransformed_test.append(ecg_signal_2)
 
     # Convert data to PyTorch tensors
     x_train_tensor = torch.tensor(np.array(x_train), dtype=torch.float32)
@@ -373,7 +377,7 @@ def train_mlp(batches, test_size, window_size, epochs, learning_rate_value, trun
     y_test_tensor = torch.tensor(np.array(y_test), dtype=torch.float32)
 
     # Hyperparameters
-    input_size = (truncate_value * 2) + 1   # Size of each input vector (e.g., window size)
+    input_size = (truncate_value * 2) + 1  # Size of each input vector (e.g., window size)
     hidden_size = 300  # Number of hidden units in the ANN
     hidden_size_2 = 100  # Number of hidden units in the ANN
     output_size = truncate_value * 2  # Size of the predicted output vector
@@ -395,38 +399,38 @@ def train_mlp(batches, test_size, window_size, epochs, learning_rate_value, trun
         loss = criterion(outputs, y_train_tensor)
         loss.backward()
         optimizer.step()
-        print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
 
     print("start testing")
     with torch.no_grad():
         predictions = neural_net(x_test_tensor)
 
     for pred, ground_truth in zip(predictions, y_test):
-        #print(pred)
-        #print(y_test)
-        zero_array = np.zeros(window_size-truncate_value)  # Create a zero array of the same length
+        # print(pred)
+        # print(y_test)
+        zero_array = np.zeros(window_size - truncate_value)  # Create a zero array of the same length
 
         # Concatenate the arrays
         pred = np.concatenate((pred, zero_array))
         ground_truth = np.concatenate((ground_truth, zero_array))
-        plot_prediction(pred, ground_truth, "") # TODO need to add dummy value for untranformed
-
+        plot_prediction(pred, ground_truth, "")  # TODO need to add dummy value for untranformed
 
 
 if __name__ == "__main__":
     print("Starting ...")
-    window_size = 200
+    window_size_setup = 200
 
-    batches = extract_qrs_complex("data_shared/transformed_data3_andrei.csv", window_size)
-    #plot_batches(batches)
-    truncate_value = 50
-    input_size = truncate_value*2 + 1 # if not truncate use dont multiply with 2 and dont use plus 1 but plus 3
-    hidden_size = 200
-    num_layers = 2
-    output_size = input_size - 1
-    test_size = 0.1
-    epochs = 100
-    learning_rate = 0.01
-    train_lstm(batches, input_size, hidden_size, num_layers, output_size, test_size, epochs, learning_rate, truncate_value)
-    #train_mlp(batches, test_size, window_size, epochs, learning_rate, truncate_value)
+    batches_setup = extract_qrs_complex("data_shared/transformed_data3_andrei.csv", window_size_setup)
+    # plot_batches(batches)
+    truncate_value_setup = 50
+    input_size_setup = truncate_value_setup * 2 + 1  # if not truncate use dont multiply with 2 and dont use plus 1 but plus 3
+    hidden_size_setup = 200
+    num_layers_setup = 2
+    output_size_setup = input_size_setup - 1
+    test_size_setup = 0.1
+    epochs_setup = 100
+    learning_rate_setup = 0.01
+    train_lstm(batches_setup, input_size_setup, hidden_size_setup, num_layers_setup, output_size_setup, test_size_setup,
+               epochs_setup, learning_rate_setup, truncate_value_setup)
+    # train_mlp(batches_setup, test_size_setup, window_size_setup, epochs_setup, learning_rate_setup, truncate_value_setup)
     print("Complete")

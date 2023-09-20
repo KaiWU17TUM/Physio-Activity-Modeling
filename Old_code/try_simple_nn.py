@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.manifold import TSNE
 
-from Build_batches import split_ecg_to_action_lists
+from Old_code.Build_batches import split_ecg_to_action_lists
 
 
 # Define the neural network class
@@ -116,7 +116,7 @@ def try_t_sne(data_array_action):
 if __name__ == "__main__":
     print("Hello")
     # Output file name
-    ecg_file = "data/DHM 2/Andrei/transformed_data.csv"
+    ecg_file = "../data/DHM 2/Andrei/transformed_data.csv"
     data_array_action = split_ecg_to_action_lists(ecg_file)
     train_network(data_array_action)
     #try_t_sne(data_array_action)

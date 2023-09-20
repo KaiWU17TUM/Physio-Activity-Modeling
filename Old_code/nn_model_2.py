@@ -18,8 +18,6 @@ import torch
 from matplotlib import pyplot as plt
 from torch import nn
 
-from Build_batches import split_ecg_to_action_lists
-
 
 # build batches without crossections between themself. Just cut the array in pieces of the same length.
 def split_to_batches(ecg_file):
@@ -333,7 +331,7 @@ def train_model_2(batches):
 if __name__ == "__main__":
     print("NN_model_2")
     # Output file name
-    ecg_file = "data/DHM 2/Andrei/transformed_data.csv"
+    ecg_file = "../data/DHM 2/Andrei/transformed_data.csv"
     data_array_action = split_to_batches(ecg_file)
     # plot_data_fft(data_array_action)
     train_model_2(data_array_action)

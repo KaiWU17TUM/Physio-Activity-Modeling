@@ -66,7 +66,7 @@ def perform_wavelet(list_of_tupel_action):
 if __name__ == "__main__":
     print("Hello")
     # Output file name
-    ecg_file = "data/DHM 2/Andrei/transformed_data.csv"
+    ecg_file = "../data/DHM 2/Andrei/transformed_data.csv"
     data_array_action = split_ecg_to_action_lists(ecg_file)
     perform_fft(data_array_action)
     print("end")

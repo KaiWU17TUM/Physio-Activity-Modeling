@@ -95,7 +95,7 @@ def analyze_with_fft_old(ecg_file):
 if __name__ == "__main__":
     print("Hello")
     # Output file name
-    ecg_file = "data/DHM 2/Andrei/transformed_data.csv"
+    ecg_file = "../data/DHM 2/Andrei/transformed_data.csv"
 
     analyze_with_fft_old(ecg_file)
     print("end")

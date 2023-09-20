@@ -6,7 +6,7 @@ import os
 
 def test(filename):
     # Read in the CSV file
-    data = pd.read_csv('data/DHM-action-vitals/activity_hr_data.csv')
+    data = pd.read_csv('../data/DHM-action-vitals/activity_hr_data.csv')
 
     # Plot columns using matplotlib
     fig, axs = plt.subplots(4, 3, figsize=(20, 20))
@@ -39,7 +39,7 @@ def test(filename):
 
 
 if __name__ == "__main__":
-    for file in os.listdir('data/DHM-action-vitals/'):
+    for file in os.listdir('../data/DHM-action-vitals/'):
         if file.endswith('.csv'):
             test(file)
         print(file)
