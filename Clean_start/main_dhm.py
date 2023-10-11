@@ -86,14 +86,18 @@ if __name__ == "__main__":
     print("start DHM")
     window_size = 200
     test_size = 0.1
-    epochs = 200
+    epochs = 100
     learning_rate_value = 0.01
     truncate_value = 25
     truncate_value_front = 2
-    input_size = truncate_value * 2 + 1
-    hidden_size = 200
+    input_size = (truncate_value - truncate_value_front) * 2 + 1
+    hidden_size = 10
+    hidden_size2 = 5
     num_layers = 2
     output_size = input_size - 1
+    plot = False
+    # To use the  uuntransfomred set this to = False
+    test_set = True
 
     #inspect_dhm("/Users/vet/Documents/Uni Allgemein/Master/SS23/Guided Research/Physio-Activity-Modeling/data_shared/transformed_data3_andrei.csv")
     batches = extract_qrs_complex(
@@ -104,14 +108,17 @@ if __name__ == "__main__":
     # evaluate_rfft(batches[0])
     # evaluate_rfft_trunc(batches[0], truncate_value, truncate_value_front)
 
+    print(f"person \t spearman \t mse")
+    for x in range(90, 100):
+        test_size = x * 0.01
+        print(test_size)
 
-    pred, ground = train_mlp(batches, test_size, window_size, epochs, learning_rate_value, truncate_value, truncate_value_front)
-    pearson_mean, spearman_mean, mse = plot_prediction(pred, ground, "MLP", window_size, truncate_value, truncate_value_front, True)
-    print(f"Pearson_cc: {pearson_mean}")
-    print(f"Spearman_cc: {spearman_mean}")
-    print(f"MSE: {mse}")
-    #pred, ground = train_lstm(batches, input_size, hidden_size, num_layers, output_size, test_size, epochs,
-    #                          learning_rate_value,
-    #                          truncate_value, False)
-    #pearson_mean, spearman_mean, mse = plot_prediction(pred, ground, "LSTM", window_size, truncate_value, False)
+        pred, y_test, ground = train_mlp(batches, test_size, window_size, epochs, learning_rate_value, truncate_value, truncate_value_front, hidden_size, hidden_size2)
+        pearson_mean, spearman_mean, mse = plot_prediction(pred, y_test, ground, "MLP", window_size, truncate_value, truncate_value_front, plot, test_set)
+        print(f"MLP\t{pearson_mean}\t{spearman_mean}\t{mse}")
 
+        pred, y_test, ground = train_lstm(batches, input_size, hidden_size, num_layers, output_size, test_size, epochs,
+                                 learning_rate_value,
+                                 truncate_value, truncate_value_front)
+        pearson_mean, spearman_mean, mse = plot_prediction(pred, y_test, ground, "LSTM", window_size, truncate_value, truncate_value_front, plot, test_set)
+        print(f"LSTM\t{pearson_mean}\t{spearman_mean}\t{mse}")

@@ -1,9 +1,11 @@
 # This file contains all helping functings that were used in all files
 import numpy as np
+import torch
 from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
 from scipy.stats import pearsonr, spearmanr
 from sklearn.preprocessing import MinMaxScaler
+from torch.utils.data import Dataset
 
 
 def split_img_values(value_array):
@@ -117,7 +119,7 @@ def build_sets(batches, test_size, truncate_value, truncate_value_front):
     array_index = build_test_array(batches, test_size)
 
     # Initialize lists for training and testing data
-    x_train, x_test, y_train, y_test = [], [], [], []
+    x_train, x_test, y_train, y_test, test_untransformed = [], [], [], [], []
 
     # Loop through batches to extract features and create input-output pairs
     for index in range(len(batches) - 1):
@@ -136,12 +138,13 @@ def build_sets(batches, test_size, truncate_value, truncate_value_front):
             y_train.append(fft_batch_2)
         else:
             x_test.append(temp)
-            y_test.append(ecg_signal_2)
+            y_test.append(fft_batch_2)
+            test_untransformed.append(ecg_signal_2)
 
-    return x_train, x_test, y_train, y_test
+    return x_train, x_test, y_train, y_test, test_untransformed
 
 
-def plot_prediction(preds, ground_truths, type_of_network, window_size, truncate_value, truncate_value_front, plot_y_n):
+def plot_prediction(preds, y_test, ground_truths, type_of_network, window_size, truncate_value, truncate_value_front, plot_y_n, test_set):
     """
     Plot predictions and ground truths for a time series forecasting task.
 
@@ -158,7 +161,10 @@ def plot_prediction(preds, ground_truths, type_of_network, window_size, truncate
     pearson_cc = []
     spearman_cc = []
     mse = []
-    for pred, ground_truth in zip(preds, ground_truths):
+    pearson_cc_test = []
+    spearman_cc_test = []
+    mse_test = []
+    for pred, y_test, ground_truth in zip(preds, y_test, ground_truths):# TODO welches test set soll ich verwenden ? trans or not ?
         zero_array = np.zeros(int(window_size / 2) + 1 - truncate_value)
 
         array_to_add_front = np.zeros(truncate_value_front)
@@ -168,7 +174,13 @@ def plot_prediction(preds, ground_truths, type_of_network, window_size, truncate
         inverse_array = np.append(array_to_add_front, pred)
         inverted_signal_pred = np.fft.irfft(np.append(inverse_array, zero_array))
 
+        y_test = inverse_img_number(y_test)
+        inverse_array_test = np.append(array_to_add_front, y_test)
+        inverted_signal_test = np.fft.irfft(np.append(inverse_array_test, zero_array))
+
+        ##### Untransformed Test
         # Calculate Pearson correlation coefficient
+        ground_truth = np.array(ground_truth)
         correlation_coefficient, p_value = pearsonr(inverted_signal_pred, ground_truth)
         # Calculate Spearman correlation coefficient
         rho, _ = spearmanr(inverted_signal_pred, ground_truth)
@@ -176,70 +188,70 @@ def plot_prediction(preds, ground_truths, type_of_network, window_size, truncate
         spearman_cc.append(rho)
 
         # Calculate the squared differences
-        squared_diff = (ground_truths - inverted_signal_pred) ** 2
+        squared_diff = (ground_truth - inverted_signal_pred) ** 2 #TODO mit oder ohne s
         mse_local = np.mean(squared_diff)
         mse.append(mse_local)
 
-        if plot_y_n:
-            # Add a text annotation or note
-            plt.text(120, 0.1, f'Pearson CC {round(correlation_coefficient, 4)}', fontsize=12, color='blue')
-            plt.text(120, 0.2, f'Spearman CC {round(rho, 4)}', fontsize=12, color='blue')
-            plt.text(120, 0.3, f'MSE {round(mse_local, 4)}', fontsize=12, color='blue')
+        ### Transfomred Test
+        # Calculate Pearson correlation coefficient
+        correlation_coefficient_test, p_value_test = pearsonr(inverted_signal_pred, inverted_signal_test)
+        # Calculate Spearman correlation coefficient
+        rho_test, _ = spearmanr(inverted_signal_pred, inverted_signal_test)
+        pearson_cc_test.append(correlation_coefficient_test)
+        spearman_cc_test.append(rho_test)
 
-            plt.plot(inverted_signal_pred, linestyle='dotted', label='prediction')
-            plt.plot(ground_truth, linestyle='-', label='ground truth')
-            plt.legend()
-            plt.title(f"Prediction vs Ground truth in the {type_of_network}")
-            plt.ylabel("Amplitude")
-            plt.xlabel("Time")
+        # Calculate the squared differences
+        squared_diff_test = (inverted_signal_test - inverted_signal_pred) ** 2
+        mse_local_test = np.mean(squared_diff_test)
+        mse_test.append(mse_local_test)
+        if test_set:
+            if plot_y_n:
+                # Add a text annotation or note
+                plt.text(120, 0.1, f'Pearson CC {round(correlation_coefficient_test, 4)}', fontsize=12, color='blue')
+                plt.text(120, 0.2, f'Spearman CC {round(rho_test, 4)}', fontsize=12, color='blue')
+                plt.text(120, 0.3, f'MSE {round(mse_local_test, 4)}', fontsize=12, color='blue')
 
-            plt.tight_layout()
-            plt.show()
+                plt.plot(inverted_signal_pred, linestyle='dotted', label='prediction')
+                plt.plot(inverted_signal_test, linestyle='-', label='inverted test')
+                plt.legend()
+                plt.title(f"Prediction vs Test in the {type_of_network}")
+                plt.ylabel("Amplitude")
+                plt.xlabel("Time")
 
-    return np.mean(pearson_cc), np.mean(spearman_cc), np.mean(mse)
+                plt.tight_layout()
+                plt.show()
+        else:
+            if plot_y_n:
+                # Add a text annotation or note
+                plt.text(120, 0.1, f'Pearson CC {round(correlation_coefficient, 4)}', fontsize=12, color='blue')
+                plt.text(120, 0.2, f'Spearman CC {round(rho, 4)}', fontsize=12, color='blue')
+                plt.text(120, 0.3, f'MSE {round(mse_local, 4)}', fontsize=12, color='blue')
+
+                plt.plot(inverted_signal_pred, linestyle='dotted', label='prediction')
+                plt.plot(ground_truth, linestyle='-', label='ground truth')
+                plt.legend()
+                plt.title(f"Prediction vs Ground truth in the {type_of_network}")
+                plt.ylabel("Amplitude")
+                plt.xlabel("Time")
+
+                plt.tight_layout()
+                plt.show()
+    if test_set:
+        return np.mean(pearson_cc_test), np.mean(spearman_cc_test), np.mean(mse_test)
+    else:
+        return np.mean(pearson_cc), np.mean(spearman_cc), np.mean(mse)
 
 
 def up_sample(array, freq, target_freq):
-    #TODO does not work korrect, missing Values.
+    t_original = np.arange(0, len(array) / freq, 1 / freq)
 
-    # Create an array of time values for the original data
-    original_time = np.arange(len(array)) / freq
+    # Create a new time array for the target frequency
+    t_target = np.arange(0, len(array) / freq, 1 / target_freq)
 
-    # Create a function to interpolate the signal
-    interpolator = interp1d(original_time, array, kind='linear')
+    interpolator = interp1d(t_original, array, kind='linear', fill_value="extrapolate")
+    signal_resampled = interpolator(t_target)
 
-    # Create a new array of time values for the oversampled data
-    new_time = np.arange(0, len(array) / target_freq, 1 / target_freq)
-
-    # Use the interpolator to generate the oversampled signal
-    oversampled_signal = interpolator(new_time)
-
-    # # Original signal sampled at 50 Hz (replace with your signal data)
-    # original_signal = array
-    #
-    # # Original sampling rate
-    # original_sampling_rate = 50  # Hz
-    #
-    # # Target sampling rate (desired new sampling rate)
-    # target_sampling_rate = 300  # Hz
-    #
-    # # Calculate the original time values
-    # #TODO is this correct ??
-    # original_time = np.arange(len(original_signal)) / original_sampling_rate
-    #
-    # # Create an interpolator function with linear interpolation
-    # interpolator = interp1d(original_time, original_signal, kind='linear')
-    #
-    # # Calculate the new time values
-    # new_time = np.arange(0, (len(original_signal) / original_sampling_rate) * target_sampling_rate, 1 / ((len(original_signal) / original_sampling_rate) * target_sampling_rate))
-    #
-    # # Use the interpolator to generate the upsampled signal
-    # upsampled_signal = interpolator(new_time)
-    #
-    # # The 'upsampled_signal' now contains the upsampled data at 300 Hz
-    # print(upsampled_signal)
-
-    return oversampled_signal
+    return signal_resampled
 
 
 def norm_sig(data):
@@ -252,3 +264,26 @@ def norm_sig(data):
     normalized_data = (data - min_val) / (max_val - min_val)
     return normalized_data
 
+def norm_sig_mhealth(data):
+
+    # Calculate the minimum and maximum values in the data
+    min_val = np.min(-1)
+    max_val = np.max(1)
+
+    # Normalize the data between 0 and 1
+    normalized_data = (data - min_val) / (max_val - min_val)
+    return normalized_data
+
+
+class CustomDataset(Dataset):
+    def __init__(self, data, targets):
+        self.data = data
+        self.targets = targets
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        x = torch.tensor(self.data[idx], dtype=torch.float32)
+        y = torch.tensor(self.targets[idx], dtype=torch.float32)
+        return x, y
